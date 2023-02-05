@@ -37,7 +37,7 @@ try:
 except ImportError:
     print('The distutils package is required to build or install RMG Py.')
     raise
-    
+"""
 try:
     from Cython.Build import cythonize
     from Cython.Compiler import Options
@@ -238,18 +238,26 @@ for root, dirs, files in os.walk('arkane'):
 
 # Read the version number
 exec(open('rmgpy/version.py').read())
+"""
 
 # Initiate the build and/or installation
 setup(
-    name='RMG-Py',
-    version=__version__,
+    name='reactionmechanismgenerator',
+    version="0.0.0a0",
     description='Reaction Mechanism Generator',
+    long_description="""# ATTENTION:
+## This is an alpha release of ReactionMechanismGenerator and is NOT suitable for general use NOR development.
+To install RMG, follow the install instructions on [the Official RMG page](https://reactionmechanismgenerator.github.io/RMG-Py/users/rmg/installation/index.html).""",
+    long_description_content_type='text/markdown',
     author='William H. Green and the RMG Team',
     author_email='rmg_dev@mit.edu',
     url='http://reactionmechanismgenerator.github.io',
     packages=['rmgpy', 'arkane'],
-    py_modules=modules,
-    scripts=scripts,
-    ext_modules=cythonize(ext_modules, build_dir='build', compiler_directives=directives),
-    include_dirs=['.', numpy.get_include()],
+    # py_modules=modules,
+    # scripts=scripts,
+    # ext_modules=cythonize(ext_modules, build_dir='build', compiler_directives=directives),
+    # include_dirs=['.', numpy.get_include()],
+    # install_requires = [
+    #     "Cython",
+    # ],
 )
