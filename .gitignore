@@ -28,6 +28,7 @@ documentation/build/*
 make.inc
 
 # Example output files
+rmgpy/output/*
 examples/*
 !examples/*/input.py
 !examples/**/*.ipynb
