@@ -1111,7 +1111,7 @@ def project_rotors(conformer, hessian, rotors, linear, is_ts, get_projected_out_
             i += 1
 
     # T is the transformation vector from cartesian to internal coordinates
-    T = np.zeros((n_atoms * 3, 3 * n_atoms - external), np.float64)
+    T = np.zeros((n_atoms * 3, 3 * n_atoms - external), float)
 
     T[:, 0:3 * n_atoms - external] = p[:, external:3 * n_atoms]
 
