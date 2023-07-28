@@ -286,7 +286,10 @@ class TestArrheniusEP:
     Contains unit tests of the :class:`ArrheniusEP` class.
     """
 
-    def setup_class(self):
+    def setup_method(self):
+        """
+        A function run before each unit test in this class.
+        """
         self.A = 1.0e12
         self.n = 0.5
         self.alpha = 0.5
