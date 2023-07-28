@@ -287,9 +287,6 @@ class TestArrheniusEP:
     """
 
     def setup_method(self):
-        """
-        A function run before each unit test in this class.
-        """
         self.A = 1.0e12
         self.n = 0.5
         self.alpha = 0.5
@@ -442,7 +439,7 @@ class TestArrheniusBM:
     Contains unit tests of the :class:`ArrheniusBM` class.
     """
 
-    def setup_class(self):
+    def setup_method(self):
         self.A = 8.00037e12
         self.n = 0.391734
         self.w0 = 798000
@@ -627,7 +624,7 @@ class TestPDepArrhenius:
     Contains unit tests of the :class:`PDepArrhenius` class.
     """
 
-    def setup_class(self):
+    def setup_method(self):
         self.arrhenius0 = Arrhenius(
             A=(1.0e6, "s^-1"),
             n=1.0,
@@ -888,7 +885,7 @@ class TestMultiArrhenius:
     Contains unit tests of the :class:`MultiArrhenius` class.
     """
 
-    def setup_class(self):
+    def setup_method(self):
         self.Tmin = 350.0
         self.Tmax = 1500.0
         self.comment = "Comment"
@@ -1080,7 +1077,7 @@ class TestMultiPDepArrhenius:
     Contains unit tests of the :class:`MultiPDepArrhenius` class.
     """
 
-    def setup_class(self):
+    def setup_method(self):
         self.Tmin = 350.0
         self.Tmax = 1500.0
         self.Pmin = 1e-1
