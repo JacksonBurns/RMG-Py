@@ -66,7 +66,6 @@ from rmgpy.qm.molecule import Geometry
 
 ################################################################################
 
-
 def create_new_surface(file_format, target=None, width=1024, height=768):
     """
     Create a new surface of the specified `file_format`:
@@ -81,30 +80,30 @@ def create_new_surface(file_format, target=None, width=1024, height=768):
     used.
     """
     file_format = file_format.lower()
-    if file_format == "png":
+    if file_format == 'png':
         surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(width), int(height))
-    elif file_format == "svg":
+    elif file_format == 'svg':
         surface = cairo.SVGSurface(target, width, height)
-    elif file_format == "pdf":
+    elif file_format == 'pdf':
         surface = cairo.PDFSurface(target, width, height)
-    elif file_format == "ps":
+    elif file_format == 'ps':
         surface = cairo.PSSurface(target, width, height)
     else:
-        raise ValueError('Invalid value "{0}" for type parameter; valid values are "png", "svg", "pdf", and "ps".'.format(type))
+        raise ValueError(
+            'Invalid value "{0}" for type parameter; valid values are "png", "svg", "pdf", and "ps".'.format(type))
     return surface
 
 
 ################################################################################
-
 
 class MoleculeDrawer(object):
     """
     This class provides functionality for drawing the skeletal formula of
     molecules using the Cairo 2D graphics engine. The most common use case is
     simply::
-
+    
         MoleculeDrawer().draw(molecule, file_format='png', path='molecule.png')
-
+    
     where ``molecule`` is the :class:`Molecule` object to draw. You can also
     pass a dict of options to the constructor to affect how the molecules are
     drawn.
@@ -112,11 +111,11 @@ class MoleculeDrawer(object):
 
     def __init__(self, options=None):
         self.options = {
-            "fontFamily": "sans",
-            "fontSizeNormal": 12,
-            "fontSizeSubscript": 8,
-            "bondLength": 24,
-            "padding": 2,
+            'fontFamily': 'sans',
+            'fontSizeNormal': 12,
+            'fontSizeSubscript': 8,
+            'bondLength': 24,
+            'padding': 2,
         }
         if options:
             self.options.update(options)
@@ -163,7 +162,7 @@ class MoleculeDrawer(object):
         # The Cairo 2D graphics library (and its Python wrapper) is required for
         # the molecule drawing algorithm
         if cairo is None:
-            logging.error("Cairo not found; molecule will not be drawn.")
+            logging.error('Cairo not found; molecule will not be drawn.')
             return
 
         # Make a copy of the molecule so we don't modify the original
@@ -176,7 +175,7 @@ class MoleculeDrawer(object):
         self.implicitHydrogens = {}
         surface_sites = []
         for atom in self.molecule.atoms:
-            if isinstance(atom, Atom) and atom.is_hydrogen() and atom.label == "":
+            if isinstance(atom, Atom) and atom.is_hydrogen() and atom.label == '':
                 atoms_to_remove.append(atom)
             elif atom.is_surface_site():
                 surface_sites.append(atom)
@@ -193,12 +192,12 @@ class MoleculeDrawer(object):
         # they will need special attention
         self._find_ring_groups()
         # Handle carbon monoxide special case
-        if self.molecule.get_formula() == "CO" and len(atoms_to_remove) == 0:
+        if self.molecule.get_formula() == 'CO' and len(atoms_to_remove) == 0:
             # RDKit does not accept atom type O4tc
             for atom in self.molecule.atoms:
-                if atom.symbol == "O":
+                if atom.symbol == 'O':
                     self.molecule.remove_atom(atom)
-            self.symbols = ["CO"]
+            self.symbols = ['CO']
             self.molecule.atoms[0].charge = 0  # don't label the C as - if you're not drawing the O with a +
             self.coordinates = np.array([[0, 0]], float)
         else:
@@ -215,57 +214,54 @@ class MoleculeDrawer(object):
                 self._generate_atom_labels()
 
             except (ValueError, np.linalg.LinAlgError) as e:
-                logging.error("Error while drawing molecule {0}: {1}".format(molecule.to_smiles(), e))
+                logging.error('Error while drawing molecule {0}: {1}'.format(molecule.to_smiles(), e))
                 import sys, traceback
-
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 traceback.print_exc()
                 return None, None, None
             except KeyError:
-                logging.error(
-                    "KeyError occured when drawing molecule, likely because"
-                    " the molecule contained non-standard bond orders in the"
-                    " get_resonance_hybrid method. These cannot be drawn since"
-                    " they cannot be sent to RDKit for coordinate placing."
-                )
+                logging.error('KeyError occured when drawing molecule, likely because'
+                              ' the molecule contained non-standard bond orders in the'
+                              ' get_resonance_hybrid method. These cannot be drawn since'
+                              ' they cannot be sent to RDKit for coordinate placing.')
                 raise
 
         self.coordinates[:, 1] *= -1
-        self.coordinates *= self.options["bondLength"]
+        self.coordinates *= self.options['bondLength']
 
         # Handle some special cases
-        if self.symbols == ["H", "H"]:
+        if self.symbols == ['H', 'H']:
             # Render as H2 instead of H-H
             self.molecule.remove_atom(self.molecule.atoms[-1])
-            self.symbols = ["H2"]
+            self.symbols = ['H2']
             self.coordinates = np.array([[0, 0]], float)
-        elif molecule.is_isomorphic(Molecule(smiles="[O][O]")):
+        elif molecule.is_isomorphic(Molecule(smiles='[O][O]')):
             # Render as O2 instead of O-O
             self.molecule.remove_atom(self.molecule.atoms[-1])
             self.molecule.atoms[0].radical_electrons = 0
-            self.symbols = ["O2"]
+            self.symbols = ['O2']
             self.coordinates = np.array([[0, 0]], float)
-        elif self.symbols == ["OH", "O"] or self.symbols == ["O", "OH"]:
+        elif self.symbols == ['OH', 'O'] or self.symbols == ['O', 'OH']:
             # Render as HO2 instead of HO-O or O-OH
             self.molecule.remove_atom(self.molecule.atoms[-1])
-            self.symbols = ["O2H"]
+            self.symbols = ['O2H']
             self.coordinates = np.array([[0, 0]], float)
-        elif self.symbols == ["OH", "OH"]:
+        elif self.symbols == ['OH', 'OH']:
             # Render as H2O2 instead of HO-OH or O-OH
             self.molecule.remove_atom(self.molecule.atoms[-1])
-            self.symbols = ["O2H2"]
+            self.symbols = ['O2H2']
             self.coordinates = np.array([[0, 0]], float)
-        elif self.symbols == ["O", "C", "O"]:
+        elif self.symbols == ['O', 'C', 'O']:
             # Render as CO2 instead of O=C=O
             self.molecule.remove_atom(self.molecule.atoms[0])
             self.molecule.remove_atom(self.molecule.atoms[-1])
-            self.symbols = ["CO2"]
+            self.symbols = ['CO2']
             self.coordinates = np.array([[0, 0]], float)
-        elif self.symbols == ["H", "H", "X"]:
+        elif self.symbols == ['H', 'H', 'X']:
             # Render as H2::X instead of crashing on H-H::X (vdW bond)
             self.molecule.remove_atom(self.molecule.atoms[0])
-            self.symbols = ["H2", "X"]
-            self.coordinates = np.array([[0, -0.5], [0, 0.5]], float) * self.options["bondLength"]
+            self.symbols = ['H2', 'X']
+            self.coordinates = np.array([[0, -0.5], [0, 0.5]], float) * self.options['bondLength']
 
         # Create a dummy surface to draw to, since we don't know the bounding rect
         # We will copy this to another surface with the correct bounding rect
@@ -294,7 +290,7 @@ class MoleculeDrawer(object):
             # Save PNG of drawing if appropriate
             if isinstance(target, str):
                 ext = os.path.splitext(target)[1].lower()
-                if ext == ".png":
+                if ext == '.png':
                     self.surface.write_to_png(target)
                 else:
                     self.surface.finish()
@@ -329,7 +325,7 @@ class MoleculeDrawer(object):
 
     def _generate_coordinates(self):
         """
-        Generate the 2D coordinates to be used when drawing the current
+        Generate the 2D coordinates to be used when drawing the current 
         molecule. The function uses rdKits 2D coordinate generation.
         Updates the self.coordinates Array in place.
         """
@@ -386,15 +382,15 @@ class MoleculeDrawer(object):
                         break
                 else:
                     angle = math.atan2(vector0[0], vector0[1]) - math.pi / 2
-                    rot = np.array([[math.cos(angle), math.sin(angle)], [-math.sin(angle), math.cos(angle)]], float)
+                    rot = np.array([[math.cos(angle), math.sin(angle)],
+                                    [-math.sin(angle), math.cos(angle)]], float)
                     # need to keep self.coordinates and coordinates referring to the same object
                     self.coordinates = coordinates = np.dot(coordinates, rot)
-
+            
             # If two atoms lie on top of each other, push them apart a bit
             # This is ugly, but at least the mess you end up with isn't as misleading
             # as leaving everything piled on top of each other at the origin
             import itertools
-
             for atom1, atom2 in itertools.combinations(backbone, 2):
                 i1, i2 = atoms.index(atom1), atoms.index(atom2)
                 if np.linalg.norm(coordinates[i1, :] - coordinates[i2, :]) < 0.5:
@@ -407,7 +403,6 @@ class MoleculeDrawer(object):
             # This is ugly, but at least the mess you end up with isn't as misleading
             # as leaving everything piled on top of each other at the origin
             import itertools
-
             for atom1, atom2 in itertools.combinations(backbone, 2):
                 i1, i2 = atoms.index(atom1), atoms.index(atom2)
                 if np.linalg.norm(coordinates[i1, :] - coordinates[i2, :]) < 0.5:
@@ -567,7 +562,7 @@ class MoleculeDrawer(object):
         for cycle0 in atoms[1:]:
             if len(cycle0) > len(cycle):
                 cycle = cycle0
-        angle = -2 * math.pi / len(cycle)
+        angle = - 2 * math.pi / len(cycle)
         radius = 1.0 / (2 * math.sin(math.pi / len(cycle)))
         for i, atom in enumerate(cycle):
             index = self.molecule.atoms.index(atom)
@@ -578,6 +573,7 @@ class MoleculeDrawer(object):
 
         # If there are other cycles, then try to lay them out as well
         while len(atoms) > 0:
+
             # Find the largest cycle that shares one or two atoms with a ring that's
             # already been processed
             cycle = None
@@ -585,8 +581,7 @@ class MoleculeDrawer(object):
                 for cycle1 in processed:
                     count = sum([1 for atom in cycle0 if atom in cycle1])
                     if count == 1 or count == 2:
-                        if cycle is None or len(cycle0) > len(cycle):
-                            cycle = cycle0
+                        if cycle is None or len(cycle0) > len(cycle): cycle = cycle0
             cycle0 = cycle1
             if cycle is None:
                 break
@@ -691,7 +686,7 @@ class MoleculeDrawer(object):
     def _generate_straight_chain_coordinates(self, atoms):
         """
         Update the coordinates for the linear straight chain of `atoms` in
-        the current molecule.
+        the current molecule. 
         """
         coordinates = self.coordinates
 
@@ -706,7 +701,8 @@ class MoleculeDrawer(object):
             rotate_positive = False
         else:
             rotate_positive = True
-            rot = np.array([[math.cos(-math.pi / 6), math.sin(-math.pi / 6)], [-math.sin(-math.pi / 6), math.cos(-math.pi / 6)]], float)
+            rot = np.array([[math.cos(-math.pi / 6), math.sin(-math.pi / 6)],
+                            [-math.sin(-math.pi / 6), math.cos(-math.pi / 6)]], float)
             vector = np.array([1.0, 0.0], float)
             vector = np.dot(rot, vector)
         coordinates[index1, :] = coordinates[index0, :] + vector
@@ -743,8 +739,7 @@ class MoleculeDrawer(object):
                 angle = 0.0
             # Determine coordinates for atom
             if angle != 0:
-                if not rotate_positive:
-                    angle = -angle
+                if not rotate_positive: angle = -angle
                 rot = np.array([[math.cos(angle), math.sin(angle)], [-math.sin(angle), math.cos(angle)]], float)
                 vector = np.dot(rot, vector)
                 rotate_positive = not rotate_positive
@@ -784,7 +779,8 @@ class MoleculeDrawer(object):
                 # We just need to fill in the missing bond locations
 
                 # Determine rotation angle and matrix
-                rot = np.array([[math.cos(best_angle), -math.sin(best_angle)], [math.sin(best_angle), math.cos(best_angle)]], float)
+                rot = np.array([[math.cos(best_angle), -math.sin(best_angle)],
+                                [math.sin(best_angle), math.cos(best_angle)]], float)
                 # Determine the vector of any currently-existing bond from this atom
                 vector = None
                 for atom1 in atom0.bonds:
@@ -812,6 +808,7 @@ class MoleculeDrawer(object):
                         self._generate_functional_group_coordinates(atom0, atom1)
 
             else:
+
                 # The bonds are not evenly spaced (e.g. due to a ring)
                 # We place all of the remaining bonds evenly over the reflex angle
                 start_angle = max(bond_angles)
@@ -955,32 +952,30 @@ class MoleculeDrawer(object):
         for i in range(len(symbols)):
             # Don't label carbon atoms, unless there are only one or two heavy atoms
             # or they are isotopically labeled
-            if symbols[i] == "C" and len(symbols) > 2:
-                if (len(atoms[i].bonds) > 1 or (atoms[i].radical_electrons == 0 and atoms[i].charge == 0)) and atoms[i].element.isotope == -1:
-                    symbols[i] = ""
+            if symbols[i] == 'C' and len(symbols) > 2:
+                if (len(atoms[i].bonds) > 1 or (atoms[i].radical_electrons == 0 and atoms[i].charge == 0)) \
+                        and atoms[i].element.isotope == -1:
+                    symbols[i] = ''
         # Do label atoms that have only double bonds to one or more labeled atoms
         changed = True
         while changed:
             changed = False
             for i in range(len(symbols)):
-                if (
-                    symbols[i] == ""
-                    and all([(bond.is_double() or bond.is_triple()) for bond in atoms[i].bonds.values()])
-                    and any([symbols[atoms.index(atom)] != "" for atom in atoms[i].bonds])
-                ):
+                if (symbols[i] == '' and all([(bond.is_double() or bond.is_triple()) for bond in atoms[i].bonds.values()])
+                        and any([symbols[atoms.index(atom)] != '' for atom in atoms[i].bonds])):
                     symbols[i] = atoms[i].symbol
                     changed = True
         # Add implicit hydrogens
         for i in range(len(symbols)):
-            if symbols[i] != "":
+            if symbols[i] != '':
                 try:
                     h_count = self.implicitHydrogens[atoms[i]]
                 except KeyError:
                     continue
                 if h_count == 1:
-                    symbols[i] = symbols[i] + "H"
+                    symbols[i] = symbols[i] + 'H'
                 elif h_count > 1:
-                    symbols[i] = symbols[i] + "H{0:d}".format(h_count)
+                    symbols[i] = symbols[i] + 'H{0:d}'.format(h_count)
 
         return symbols
 
@@ -1036,13 +1031,10 @@ class MoleculeDrawer(object):
                 center /= len(cycle)
                 index1 = atoms.index(cycle[0])
                 index2 = atoms.index(cycle[1])
-                radius = (
-                    math.sqrt(
-                        (center[0] - (coordinates[index1, 0] + coordinates[index2, 0]) / 2) ** 2
-                        + (center[1] - (coordinates[index1, 1] + coordinates[index2, 1]) / 2) ** 2
-                    )
-                    - 4
-                )
+                radius = math.sqrt(
+                    (center[0] - (coordinates[index1, 0] + coordinates[index2, 0]) / 2) ** 2 +
+                    (center[1] - (coordinates[index1, 1] + coordinates[index2, 1]) / 2) ** 2
+                ) - 4
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.set_line_width(1.0)
                 cr.set_line_cap(cairo.LINE_CAP_ROUND)
@@ -1058,15 +1050,16 @@ class MoleculeDrawer(object):
             for atom2 in atom.bonds:
                 vector += coordinates[atoms.index(atom2), :] - coordinates[index, :]
             heavy_first = vector[0] <= 0
-            if len(atoms) == 1 and atoms[0].symbol not in ["C", "N"] and atoms[0].charge == 0 and atoms[0].radical_electrons == 0:
+            if (len(atoms) == 1 and atoms[0].symbol not in ['C', 'N'] and
+                    atoms[0].charge == 0 and atoms[0].radical_electrons == 0):
                 # This is so e.g. water is rendered as H2O rather than OH2
                 heavy_first = False
-                cr.set_font_size(self.options["fontSizeNormal"])
+                cr.set_font_size(self.options['fontSizeNormal'])
                 x0 += cr.text_extents(symbols[0])[2] / 2.0
             self._render_atom(symbol, atom, x0, y0, cr, heavy_first, draw_lone_pairs)
 
         # Add a small amount of whitespace on all sides
-        padding = self.options["padding"]
+        padding = self.options['padding']
         self.left -= padding
         self.top -= padding
         self.right += padding
@@ -1118,12 +1111,13 @@ class MoleculeDrawer(object):
         on the Cairo context `cr`.
         """
 
-        bond_length = self.options["bondLength"]
+        bond_length = self.options['bondLength']
 
         # determine if aromatic
         is_aromatic = False
         for cycle in self.cycles:
-            if self.molecule.atoms[atom1] in cycle and self.molecule.atoms[atom2] in cycle:
+            if self.molecule.atoms[atom1] in cycle and \
+                    self.molecule.atoms[atom2] in cycle:
                 all_benzenes = True
                 for index in range(len(cycle)):
                     if not cycle[index - 1].bonds[cycle[index]].is_benzene():
@@ -1141,7 +1135,7 @@ class MoleculeDrawer(object):
         dy = y2 - y1
         du = math.cos(angle + math.pi / 2)
         dv = math.sin(angle + math.pi / 2)
-        if self.symbols[atom1] != "" or self.symbols[atom2] != "":
+        if self.symbols[atom1] != '' or self.symbols[atom2] != '':
             if bond.is_quadruple():
                 # Draw quadruple bond centered on bond axis
                 du *= 1.5
@@ -1231,26 +1225,26 @@ class MoleculeDrawer(object):
 
         atoms = self.molecule.atoms
 
-        if symbol != "":
+        if symbol != '':
             heavy_atom = symbol[0]
 
             # Split label by atoms
-            labels = re.findall(r"[A-Z][a-z]*[0-9]*", symbol)
+            labels = re.findall(r'[A-Z][a-z]*[0-9]*', symbol)
             if not heavy_first:
                 labels.reverse()
-            if "C" not in symbol and "O" not in symbol and len(atoms) == 1:
+            if 'C' not in symbol and 'O' not in symbol and len(atoms) == 1:
                 labels.sort()
-            symbol = "".join(labels)
+            symbol = ''.join(labels)
 
             # Determine positions of each character in the symbol
             coordinates = []
 
-            cr.set_font_size(self.options["fontSizeNormal"])
+            cr.set_font_size(self.options['fontSizeNormal'])
             y0 += max([cr.text_extents(char)[3] for char in symbol if char.isalpha()]) / 2
 
             for i, label in enumerate(labels):
                 for j, char in enumerate(label):
-                    cr.set_font_size(self.options["fontSizeSubscript" if char.isdigit() else "fontSizeNormal"])
+                    cr.set_font_size(self.options['fontSizeSubscript' if char.isdigit() else 'fontSizeNormal'])
                     xbearing, ybearing, width, height, xadvance, yadvance = cr.text_extents(char)
                     if i == 0 and j == 0:
                         # Center heavy atom at (x0, y0)
@@ -1269,7 +1263,7 @@ class MoleculeDrawer(object):
             width = height = 0
             start_width = end_width = 0
             for i, char in enumerate(symbol):
-                cr.set_font_size(self.options["fontSizeSubscript" if char.isdigit() else "fontSizeNormal"])
+                cr.set_font_size(self.options['fontSizeSubscript' if char.isdigit() else 'fontSizeNormal'])
                 extents = cr.text_extents(char)
                 if coordinates[i][0] + extents[0] < x:
                     x = coordinates[i][0] + extents[0]
@@ -1316,36 +1310,36 @@ class MoleculeDrawer(object):
             # Set color for text
             if not isinstance(atom, Atom) or atom.element.isotope != -1:
                 cr.set_source_rgba(0.0, 0.5, 0.0, 1.0)
-            elif heavy_atom == "C":
+            elif heavy_atom == 'C':
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
-            elif heavy_atom == "N":
+            elif heavy_atom == 'N':
                 cr.set_source_rgba(0.0, 0.0, 1.0, 1.0)
-            elif heavy_atom == "O":
+            elif heavy_atom == 'O':
                 cr.set_source_rgba(1.0, 0.0, 0.0, 1.0)
-            elif heavy_atom == "F":
+            elif heavy_atom == 'F':
                 cr.set_source_rgba(0.5, 0.75, 1.0, 1.0)
-            elif heavy_atom == "Si":
+            elif heavy_atom == 'Si':
                 cr.set_source_rgba(0.5, 0.5, 0.75, 1.0)
-            elif heavy_atom == "Al":
+            elif heavy_atom == 'Al':
                 cr.set_source_rgba(0.75, 0.5, 0.5, 1.0)
-            elif heavy_atom == "P":
+            elif heavy_atom == 'P':
                 cr.set_source_rgba(1.0, 0.5, 0.0, 1.0)
-            elif heavy_atom == "S":
+            elif heavy_atom == 'S':
                 cr.set_source_rgba(1.0, 0.75, 0.5, 1.0)
-            elif heavy_atom == "Cl":
+            elif heavy_atom == 'Cl':
                 cr.set_source_rgba(0.0, 1.0, 0.0, 1.0)
-            elif heavy_atom == "Br":
+            elif heavy_atom == 'Br':
                 cr.set_source_rgba(0.6, 0.2, 0.2, 1.0)
-            elif heavy_atom == "I":
+            elif heavy_atom == 'I':
                 cr.set_source_rgba(0.5, 0.0, 0.5, 1.0)
-            elif heavy_atom == "X":
+            elif heavy_atom == 'X':
                 cr.set_source_rgba(0.5, 0.25, 0.5, 1.0)
             else:
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
 
             # Text itself
             for i, char in enumerate(symbol):
-                cr.set_font_size(self.options["fontSizeSubscript" if char.isdigit() else "fontSizeNormal"])
+                cr.set_font_size(self.options['fontSizeSubscript' if char.isdigit() else 'fontSizeNormal'])
                 xbearing, ybearing, width, height, xadvance, yadvance = cr.text_extents(char)
                 xi, yi = coordinates[i]
                 cr.move_to(xi, yi)
@@ -1357,17 +1351,17 @@ class MoleculeDrawer(object):
             x, y = x0, y0
             width = height = 0
             bounding_rect = [x0 - 0.5, y0 - 0.5, x0 + 0.5, y0 + 0.5]
-            heavy_atom = ""
+            heavy_atom = ''
 
         # Draw radical electrons and charges
         # These will be placed either horizontally along the top or bottom of the
         # atom or vertically along the left or right of the atom
-        orientation = " "
+        orientation = ' '
         if len(atom.bonds) == 0:
             if len(symbol) == 1:
-                orientation = "r"
+                orientation = 'r'
             else:
-                orientation = "l"
+                orientation = 'l'
         elif len(atom.bonds) == 1:
             # Terminal atom - we require a horizontal arrangement if there are
             # more than just the heavy atom
@@ -1376,18 +1370,18 @@ class MoleculeDrawer(object):
             if len(symbol) <= 1:
                 angle = math.atan2(vector[1], vector[0])
                 if 3 * math.pi / 4 <= angle or angle < -3 * math.pi / 4:
-                    orientation = "l"
+                    orientation = 'l'
                 elif -3 * math.pi / 4 <= angle < -1 * math.pi / 4:
-                    orientation = "b"
+                    orientation = 'b'
                 elif -1 * math.pi / 4 <= angle < 1 * math.pi / 4:
-                    orientation = "r"
+                    orientation = 'r'
                 else:
-                    orientation = "t"
+                    orientation = 't'
             else:
                 if vector[1] <= 0:
-                    orientation = "b"
+                    orientation = 'b'
                 else:
-                    orientation = "t"
+                    orientation = 't'
         else:
             # Internal atom
             # First try to see if there is a "preferred" side on which to place the
@@ -1405,43 +1399,43 @@ class MoleculeDrawer(object):
                 # (due to there being no bonds in that quadrant)
                 # We don't even need a full 90 degrees open (using 60 degrees instead)
                 if all([1 * math.pi / 3 >= angle or angle >= 2 * math.pi / 3 for angle in angles]):
-                    orientation = "t"
+                    orientation = 't'
                 elif all([-2 * math.pi / 3 >= angle or angle >= -1 * math.pi / 3 for angle in angles]):
-                    orientation = "b"
+                    orientation = 'b'
                 elif all([-1 * math.pi / 6 >= angle or angle >= 1 * math.pi / 6 for angle in angles]):
-                    orientation = "r"
+                    orientation = 'r'
                 elif all([5 * math.pi / 6 >= angle or angle >= -5 * math.pi / 6 for angle in angles]):
-                    orientation = "l"
+                    orientation = 'l'
                 else:
                     # If we still don't have it (e.g. when there are 4+ equally-
                     # spaced bonds), just put everything in the top right for now
-                    orientation = "tr"
+                    orientation = 'tr'
             else:
                 # There is an unbalanced side, so let's put the radical/charge data there
                 angle = math.atan2(vector[1], vector[0])
                 if 3 * math.pi / 4 <= angle or angle < -3 * math.pi / 4:
-                    orientation = "l"
+                    orientation = 'l'
                 elif -3 * math.pi / 4 <= angle < -1 * math.pi / 4:
-                    orientation = "b"
+                    orientation = 'b'
                 elif -1 * math.pi / 4 <= angle < 1 * math.pi / 4:
-                    orientation = "r"
+                    orientation = 'r'
                 else:
-                    orientation = "t"
+                    orientation = 't'
 
-        cr.set_font_size(self.options["fontSizeNormal"])
+        cr.set_font_size(self.options['fontSizeNormal'])
         extents = cr.text_extents(heavy_atom)
 
         # (xi, yi) mark the center of the space in which to place the radicals and charges
-        if orientation[0] == "l":
+        if orientation[0] == 'l':
             xi = x - 3
             yi = y - extents[3] / 2
-        elif orientation[0] == "b":
+        elif orientation[0] == 'b':
             xi = x + extents[0] + extents[2] / 2
             yi = y - extents[3] - 4
-        elif orientation[0] == "r":
+        elif orientation[0] == 'r':
             xi = x + extents[0] + extents[2] + 4
             yi = y - extents[3] / 2
-        elif orientation[0] == "t":
+        elif orientation[0] == 't':
             xi = x + extents[0] + extents[2] / 2
             yi = y + 4
 
@@ -1452,44 +1446,44 @@ class MoleculeDrawer(object):
             xi += 4
 
         # Get width and height
-        cr.set_font_size(self.options["fontSizeSubscript"])
+        cr.set_font_size(self.options['fontSizeSubscript'])
         width = 0.0
         height = 0.0
-        if orientation[0] == "b" or orientation[0] == "t":
+        if orientation[0] == 'b' or orientation[0] == 't':
             if atom.radical_electrons > 0:
                 width += atom.radical_electrons * 2 + (atom.radical_electrons - 1)
                 height = atom.radical_electrons * 2
-            text = ""
+            text = ''
             if atom.radical_electrons > 0 and atom.charge != 0:
                 width += 1
             if atom.charge == 1:
-                text = "+"
+                text = '+'
             elif atom.charge > 1:
-                text = "{0:d}+".format(atom.charge)
+                text = '{0:d}+'.format(atom.charge)
             elif atom.charge == -1:
-                text = "\u2013"
+                text = u'\u2013'
             elif atom.charge < -1:
-                text = "{0:d}\u2013".format(abs(atom.charge))
-            if text != "":
+                text = u'{0:d}\u2013'.format(abs(atom.charge))
+            if text != '':
                 extents = cr.text_extents(text)
                 width += extents[2] + 1
                 height = extents[3]
-        elif orientation[0] == "l" or orientation[0] == "r":
+        elif orientation[0] == 'l' or orientation[0] == 'r':
             if atom.radical_electrons > 0:
                 height += atom.radical_electrons * 2 + (atom.radical_electrons - 1)
                 width = atom.radical_electrons * 2
-            text = ""
+            text = ''
             if atom.radical_electrons > 0 and atom.charge != 0:
                 height += 1
             if atom.charge == 1:
-                text = "+"
+                text = '+'
             elif atom.charge > 1:
-                text = "{0:d}+".format(atom.charge)
+                text = '{0:d}+'.format(atom.charge)
             elif atom.charge == -1:
-                text = "\u2013"
+                text = u'\u2013'
             elif atom.charge < -1:
-                text = "{0:d}\u2013".format(abs(atom.charge))
-            if text != "":
+                text = u'{0:d}\u2013'.format(abs(atom.charge))
+            if text != '':
                 extents = cr.text_extents(text)
                 height += extents[3] + 1
                 width = extents[2]
@@ -1508,7 +1502,7 @@ class MoleculeDrawer(object):
             if yi + height > bounding_rect[3]:
                 bounding_rect[3] = yi + height
 
-        if orientation[0] == "b" or orientation[0] == "t":
+        if orientation[0] == 'b' or orientation[0] == 't':
             # Draw radical electrons first
             for i in range(atom.radical_electrons):
                 cr.new_sub_path()
@@ -1518,22 +1512,22 @@ class MoleculeDrawer(object):
             if atom.radical_electrons > 0:
                 xi += atom.radical_electrons * 2 + (atom.radical_electrons - 1) + 1
             # Draw charges second
-            text = ""
+            text = ''
             if atom.charge == 1:
-                text = "+"
+                text = '+'
             elif atom.charge > 1:
-                text = "{0:d}+".format(atom.charge)
+                text = '{0:d}+'.format(atom.charge)
             elif atom.charge == -1:
-                text = "\u2013"
+                text = u'\u2013'
             elif atom.charge < -1:
-                text = "{0:d}\u2013".format(abs(atom.charge))
-            if text != "":
+                text = u'{0:d}\u2013'.format(abs(atom.charge))
+            if text != '':
                 extents = cr.text_extents(text)
                 cr.move_to(xi, yi - extents[1])
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.show_text(text)
 
-            # Draw lone electron pairs
+            # Draw lone electron pairs            
             # Draw them for nitrogen containing molecules only
             if draw_lone_pairs:
                 for i in range(atom.lone_pairs):
@@ -1555,18 +1549,18 @@ class MoleculeDrawer(object):
                         y2lp = y + 3
                     self._draw_line(cr, x1lp, y1lp, x2lp, y2lp)
 
-        elif orientation[0] == "l" or orientation[0] == "r":
+        elif orientation[0] == 'l' or orientation[0] == 'r':
             # Draw charges first
-            text = ""
+            text = ''
             if atom.charge == 1:
-                text = "+"
+                text = '+'
             elif atom.charge > 1:
-                text = "{0:d}+".format(atom.charge)
+                text = '{0:d}+'.format(atom.charge)
             elif atom.charge == -1:
-                text = "\u2013"
+                text = u'\u2013'
             elif atom.charge < -1:
-                text = "{0:d}\u2013".format(abs(atom.charge))
-            if text != "":
+                text = u'{0:d}\u2013'.format(abs(atom.charge))
+            if text != '':
                 extents = cr.text_extents(text)
                 cr.move_to(xi - extents[2] / 2, yi - extents[1])
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
@@ -1633,15 +1627,14 @@ class MoleculeDrawer(object):
 
 ################################################################################
 
-
 class ReactionDrawer(object):
     """
     This class provides functionality for drawing chemical reactions using the
     skeletal formula of each reactant and product molecule via the Cairo 2D
     graphics engine. The most common use case is simply::
-
+    
         ReactionDrawer().draw(reaction, file_format='png', path='reaction.png')
-
+    
     where ``reaction`` is the :class:`Reaction` object to draw. You can also
     pass a dict of options to the constructor to affect how the molecules are
     drawn.
@@ -1649,11 +1642,9 @@ class ReactionDrawer(object):
 
     def __init__(self, options=None):
         self.options = MoleculeDrawer().options.copy()
-        self.options.update(
-            {
-                "arrowLength": 36,
-            }
-        )
+        self.options.update({
+            'arrowLength': 36,
+        })
         if options:
             self.options.update(options)
 
@@ -1662,7 +1653,7 @@ class ReactionDrawer(object):
         Draw the given `reaction` using the given image `file_format` - pdf, svg,
         ps, or png. If `path` is given, the drawing is saved to that location
         on disk.
-
+        
         This function returns the Cairo surface and context used to create the
         drawing, as well as a bounding box for the molecule being drawn as the
         tuple (`left`, `top`, `width`, `height`).
@@ -1670,29 +1661,29 @@ class ReactionDrawer(object):
         # The Cairo 2D graphics library (and its Python wrapper) is required for
         # the reaction drawing algorithm
         if cairo is None:
-            logging.error("Cairo not found; molecule will not be drawn.")
+            logging.error('Cairo not found; molecule will not be drawn.')
             return
 
-        font_family = self.options["fontFamily"]
-        font_size_normal = self.options["fontSizeNormal"]
+        font_family = self.options['fontFamily']
+        font_size_normal = self.options['fontSizeNormal']
 
         # First draw each of the reactants and products
         reactants, products = [], []
         for reactant in reaction.reactants:
             if isinstance(reactant, Molecule):
                 molecule = reactant
-            elif hasattr(reactant, "molecule"):
+            elif hasattr(reactant, 'molecule'):
                 molecule = reactant.molecule[0]
             else:
-                raise TypeError("Expected Molecule or Species object, not {0}".format(reactant.__class__.__name__))
+                raise TypeError('Expected Molecule or Species object, not {0}'.format(reactant.__class__.__name__))
             reactants.append(MoleculeDrawer().draw(molecule, file_format))
         for product in reaction.products:
             if isinstance(product, Molecule):
                 molecule = product
-            elif hasattr(product, "molecule"):
+            elif hasattr(product, 'molecule'):
                 molecule = product.molecule[0]
             else:
-                raise TypeError("Expected Molecule or Species object, not {0}".format(product.__class__.__name__))
+                raise TypeError('Expected Molecule or Species object, not {0}'.format(product.__class__.__name__))
             products.append(MoleculeDrawer().draw(molecule, file_format))
 
         # Next determine size required for surface
@@ -1709,8 +1700,8 @@ class ReactionDrawer(object):
 
         # Also include '+' and reaction arrow in width
         cr.set_font_size(font_size_normal)
-        plus_extents = cr.text_extents(" + ")
-        arrow_width = self.options["arrowLength"]
+        plus_extents = cr.text_extents(' + ')
+        arrow_width = self.options['arrowLength']
         rxn_width += (len(reactants) - 1) * plus_extents[4] + arrow_width + (len(products) - 1) * plus_extents[4]
 
         # Now make the surface for the reaction and render each molecule on it
@@ -1734,7 +1725,7 @@ class ReactionDrawer(object):
                 rxn_y = rxn_top + 0.5 * (rxn_height - plus_extents[3])
                 rxn_cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 rxn_cr.move_to(rxn_x, rxn_y - plus_extents[1])
-                rxn_cr.show_text(" + ")
+                rxn_cr.show_text(' + ')
                 rxn_cr.restore()
                 rxn_x += plus_extents[4]
             # Draw the reactant
@@ -1773,7 +1764,7 @@ class ReactionDrawer(object):
                 rxn_y = rxn_top + 0.5 * (rxn_height - plus_extents[3])
                 rxn_cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 rxn_cr.move_to(rxn_x, rxn_y - plus_extents[1])
-                rxn_cr.show_text(" + ")
+                rxn_cr.show_text(' + ')
                 rxn_cr.restore()
                 rxn_x += plus_extents[4]
             # Draw the product
@@ -1787,7 +1778,7 @@ class ReactionDrawer(object):
             rxn_x += width
 
         # Finish Cairo drawing
-        if file_format == "png":
+        if file_format == 'png':
             rxn_surface.write_to_png(path)
         else:
             rxn_surface.finish()
