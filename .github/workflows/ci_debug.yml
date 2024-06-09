@@ -15,7 +15,6 @@ concurrency:
 jobs:
   build-and-test-linux:
     runs-on: ubuntu-latest
-    env:
     defaults:
       run:
         shell: bash -l {0}
